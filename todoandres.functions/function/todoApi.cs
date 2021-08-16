@@ -114,5 +114,64 @@ namespace todoandres.functions.function
             });
 
         }
+
+        [FunctionName(nameof(getAllTodo))]
+        public static async Task<IActionResult> getAllTodo(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "todo")] HttpRequest req,
+            [Table("todo", Connection = "AzureWebJobsStorage")] CloudTable todoTable,
+            ILogger log)
+        {
+
+            log.LogInformation("get all todo received.");
+
+            //no tiene parametros, elimino todo
+            TableQuery<TodoEntity> tableQuery = new TableQuery<TodoEntity>();
+            TableQuerySegment<TodoEntity> todoquerys = await todoTable.ExecuteQuerySegmentedAsync(tableQuery, null);
+
+
+            string message = "Retrieved all todos.";
+            log.LogInformation(message);
+
+
+            return new OkObjectResult(new Response
+            {
+                IsSuccess = true,
+                Message = message,
+                Result = todoquerys
+            });
+
+        }
+
+        [FunctionName(nameof(getById))]
+        public static async Task<IActionResult> getById(
+          [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "todo/{id}")] HttpRequest req,
+          [Table("todo", "TODO", "{id}", Connection = "AzureWebJobsStorage")] TodoEntity TodoEntity,
+          string id,
+          ILogger log)
+        {
+
+            log.LogInformation($"get todo by id: {id} received.");
+
+            if (TodoEntity == null)
+            {
+                return new BadRequestObjectResult(new Response
+                {
+                    IsSuccess = false,
+                    Message = "Todo not found."
+                });
+            }
+
+            string message = $"Todo: {TodoEntity.RowKey}, retrieved.";
+            log.LogInformation(message);
+
+
+            return new OkObjectResult(new Response
+            {
+                IsSuccess = true,
+                Message = message,
+                Result = TodoEntity
+            });
+
+        }
     }
 }
