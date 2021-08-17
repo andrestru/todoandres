@@ -173,5 +173,40 @@ namespace todoandres.functions.function
             });
 
         }
+
+        [FunctionName(nameof(deletebyId))]
+        public static async Task<IActionResult> deletebyId(
+           [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "todo/{id}")] HttpRequest req,
+           [Table("todo", "TODO", "{id}", Connection = "AzureWebJobsStorage")] TodoEntity TodoEntity,
+           [Table("todo", Connection = "AzureWebJobsStorage")] CloudTable todoTable,
+           string id,
+           ILogger log)
+        {
+
+            log.LogInformation($"Delete todo: {id}, received.");
+
+            if (TodoEntity == null)
+            {
+                return new BadRequestObjectResult(new Response
+                {
+                    IsSuccess = false,
+                    Message = "Todo not found."
+                });
+            }
+
+            await todoTable.ExecuteAsync(TableOperation.Delete(TodoEntity));
+            string message = $"Todo: {TodoEntity.RowKey}, deleted.";
+            log.LogInformation(message);
+
+
+            return new OkObjectResult(new Response
+            {
+                IsSuccess = true,
+                Message = message,
+                Result = TodoEntity
+            });
+
+        }
     }
+
 }
